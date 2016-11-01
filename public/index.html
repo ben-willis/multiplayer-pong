@@ -1,0 +1,51 @@
+<head>
+  <title>Pong</title>
+  <meta author="Ben Willis"></meta>
+
+  <meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1, maximum-scale=1">
+
+  <link rel="stylesheet" type="text/css" href="style.css">
+
+  <link href='https://fonts.googleapis.com/css?family=Nunito' rel='stylesheet' type='text/css'>
+
+  <script src="https://cdn.socket.io/socket.io-1.3.5.js"></script>
+  <script type="text/javascript" src="main.js"></script>
+
+</head>
+<body>
+
+  <h1>Pong</h1>
+
+  <div class="canvas">
+
+    <canvas id="canvas" width="900" height="600"></canvas>
+
+    <div class="touchControls" id="touchControls">
+      <div id="button-up" class="button">UP</div>
+      <div id="button-down" class="button">DOWN</div>
+    </div>
+  </div>
+
+  <div class="menu-container" id="menu-container">
+
+    <ul class="start-menu" id="start-menu">
+      <li id="start-message">Welcome, enter a nickname and find a game!</li>
+      <li><input type="text" name="nickname" id="nicknameInput" placeholder="Nickname"></li>
+      <li><input type="submit" id="find-game-button" value="Find Game" onClick="game.client_find_game()"></li>
+    </ul>
+
+    <ul class="end-menu" id="end-menu" style="display: none">
+      <li id="end-message">Do you want a rematch?</li>
+      <li><input type="submit" id="request-button" onClick="game.client_request_rematch()" value="Yes"/></li>
+      <li><input type="submit" onClick="game.client_reject_rematch()" value="No"></li>
+    </ul>
+
+  </div>
+
+  <script type="text/javascript">
+    if (!('ontouchstart' in document.documentElement)) {
+      document.getElementById('touchControls').style.display = 'none';
+  }
+  </script>
+
+</body>
