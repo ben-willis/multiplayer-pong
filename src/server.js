@@ -1,13 +1,10 @@
-
-// the server manages our games it handles inputs and assigns a common core to each game
-
 var UUID        = require('node-uuid');
 
 //Since we are sharing code with the browser, we
 //are going to include some values to handle that.
 global.window = global.document = global;
 
-var frame_time = 45; //on server we run at 45ms, 22hz
+var frame_time = 45; //on server we run at 45ms
 
 ( function () {
 

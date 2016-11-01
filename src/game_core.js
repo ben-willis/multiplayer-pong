@@ -85,8 +85,6 @@ game_core.prototype.update_physics = function() {
 
 game_core.prototype.process_input = function( player ) {
 
-    //It's possible to have recieved multiple inputs by now,
-    //so we process each one
     var y_dir = 0;
     var ic = player.inputs.length;
     if(ic) {
@@ -104,15 +102,14 @@ game_core.prototype.process_input = function( player ) {
                 if(key == 'd') {
                     y_dir += 1;
                 }
-            } //for all input values
+            }
 
-        } //for each input command
+        }
 
         player.last_input_seq = player.inputs[ic-1].seq;
 
-    } //if we have inputs
+    }
 
-        //give it back
     return y_dir;
 
 };
@@ -137,7 +134,7 @@ game_core.prototype.check_puck_collision = function(player1, player2, puck) {
 
     	if (puck.top > player1.top - 10 && puck.top < player1.top+player1.height) {
 
-        	multiplier = 2*(player1.top - (puck.top+10))/(player1.height+10) + 1;								//between 1 at top -1 at bottom
+        	multiplier = 2*(player1.top - (puck.top+10))/(player1.height+10) + 1;	//between 1 at top -1 at bottom
         	max = multiplier>0 ? Math.min(160 + puck.angle, 30) : Math.min(-puck.angle, 30 );	//the maximum extra angle
 
     		puck.angle = -puck.angle + (multiplier * max);
@@ -171,28 +168,24 @@ game_core.prototype.check_puck_collision = function(player1, player2, puck) {
 
 game_core.prototype.server_update_physics = function() {
 
-    //Handle player one
     this.players.self.old_state.top = this.players.self.top;
     var new_dir = this.process_input(this.players.self);
     this.players.self.top += new_dir * 5;
 
-    //Handle player two
     this.players.other.old_state.top = this.players.other.top;
     var other_new_dir = this.process_input(this.players.other);
     this.players.other.top += other_new_dir * 5;
 
-    //Handle puck
     this.puck.old_state = {top: this.puck.top, left: this.puck.left};
     this.puck.top += this.puck.speed * Math.cos(this.puck.angle  * (Math.PI/180));
     this.puck.left += this.puck.speed * Math.sin(this.puck.angle  * (Math.PI/180));
 
-    //Keep the physics position in the world
     this.check_player_collision( this.players.self );
     this.check_player_collision( this.players.other );
     this.check_puck_collision( this.players.self, this.players.other, this.puck );
 
-    this.players.self.inputs = []; //we have cleared the input buffer, so remove this
-    this.players.other.inputs = []; //we have cleared the input buffer, so remove this
+    this.players.self.inputs = [];
+    this.players.other.inputs = [];
 
 };
 
@@ -206,7 +199,7 @@ game_core.prototype.server_update = function(){
         return;
     }
 
-        //Make a snapshot of the current state, for updating the clients
+    //Make a snapshot of the current state, for updating the clients
     this.laststate = {
         ht  : this.players.self.top,                //'host top', the game creators position
         hi  : this.players.self.last_input_seq,     //'host last input', the hosts last used input
@@ -221,12 +214,12 @@ game_core.prototype.server_update = function(){
         t   : this.time_left                        // the time left in the game
     };
 
-        //Send the snapshot to the 'host' player
+    // Send the snapshot to the 'host' player
     if(this.players.self.instance) {
         this.players.self.instance.emit( 'onserverupdate', this.laststate );
     }
 
-        //Send the snapshot to the 'client' player
+    // Send the snapshot to the 'client' player
     if(this.players.other.instance) {
         this.players.other.instance.emit( 'onserverupdate', this.laststate );
     }
@@ -235,12 +228,8 @@ game_core.prototype.server_update = function(){
 
 game_core.prototype.server_handle_input = function(client, input, input_seq) {
 
-        //Fetch which client this refers to out of the two
-    var player_client =
-        (client.userid == this.players.self.instance.userid) ?
-            this.players.self : this.players.other;
+    var player_client = (client.userid == this.players.self.instance.userid) ? this.players.self : this.players.other;
 
-        //Store the input on the player instance for processing in the physics loop
    player_client.inputs.push({inputs:input, seq:input_seq});
 
 };
@@ -249,18 +238,16 @@ game_core.prototype.server_handle_input = function(client, input, input_seq) {
 
 game_core.prototype.client_connect_to_server = function() {
 
-        //Store a local reference to our connection to the server
         this.socket = io.connect();
 
-        //Sent each tick of the server simulation. This is our authoritive update
         this.socket.on('onserverupdate', this.client_onserverupdate_recieved.bind(this));
-        //Handle when we connect to the server, showing state and storing id's.
+
         this.socket.on('finding game', function(data){
             console.log('finding game');
         	this.players.self.id = data.id;
             this.players.self.nickname = data.nickname;
         }.bind(this));
-        //On message from the server, we parse the commands and send it to the handlers
+
         this.socket.on('message', this.client_onnetmessage.bind(this));
 
 };
@@ -288,18 +275,15 @@ game_core.prototype.client_onserverupdate_recieved = function(data){
         this.server_updates.splice(0,1);
     }
 
-        //Handle the latest positions from the server
-        //and make sure to correct our local predictions, making the server have final say.
     this.client_process_server_updates();
 
 };
 
 game_core.prototype.client_process_server_updates = function() {
 
-        //No updates...
+    //No updates...
     if(!this.server_updates.length) return;
 
-        //The most recent server update
     var latest_server_data = this.server_updates[this.server_updates.length-1];
 
     this.time_left = latest_server_data.t;
@@ -310,7 +294,6 @@ game_core.prototype.client_process_server_updates = function() {
     this.puck.state_dt = new Date().getTime() - this.puck.state_time;
     this.puck.state_time = new Date().getTime();
 
-        //Our latest server position
     if (this.players.self.host) {
         var my_server_pos = latest_server_data.ht;
         var my_last_input_on_server = latest_server_data.hi;
@@ -329,20 +312,15 @@ game_core.prototype.client_process_server_updates = function() {
         this.players.self.score = latest_server_data.cs;
     }
 
-    //this.players.self.top = my_server_pos;
     this.players.other.old_state.top = this.players.other.cur_state.top;
     this.players.other.cur_state.top = other_server_pos;
     this.players.other.state_dt = new Date().getTime() - this.players.other.state_time;
     this.players.other.state_time = new Date().getTime();
 
-    //here we handle our local input prediction ,
-    //by correcting it with the server and reconciling its differences
-
+	// Correct with server and reconcile differences
     if(my_last_input_on_server) {
 
-            //The last input sequence index in my local input list
         var lastinputseq_index = -1;
-            //Find this input in the list, and store the index
         for(var i = 0; i < this.players.self.inputs.length; ++i) {
             if(this.players.self.inputs[i].seq == my_last_input_on_server) {
                 lastinputseq_index = i;
@@ -350,21 +328,13 @@ game_core.prototype.client_process_server_updates = function() {
             }
         }
 
-            //Now we can crop the list of any updates we have already processed
         if(lastinputseq_index != -1) {
-            //so we have now gotten an acknowledgement from the server that our inputs here have been accepted
-            //and that we can predict from this known position instead
-
-                //remove the rest of the inputs we have confirmed on the server
             this.players.self.inputs.splice(0, Math.abs(lastinputseq_index - (-1)));
-                //The player is now located at the new server position, authoritive server
             this.players.self.cur_state.top = my_server_pos;
             this.players.self.state_dt = new Date().getTime() - this.players.self.state_time;
             this.players.self.state_time = new Date().getTime();
             this.players.self.last_input_seq = lastinputseq_index;
-                //Now we reapply all the inputs that we have locally that
-                //the server hasn't yet confirmed. This will 'keep' our position the same,
-                //but also confirm the server position at the same time.
+
             this.client_update_physics();
             this.players.self.top = this.players.self.cur_state.top;
             this.check_player_collision( this.players.self );
@@ -394,12 +364,12 @@ game_core.prototype.client_update = function() {
 
     this.ctx.textAlign = "center";
 
-    //draw time
+    // Draw time
     this.ctx.font = "30px arial";
     this.ctx.fillStyle = "#555";
     this.ctx.fillText(String('0'+Math.floor(this.time_left/60)).slice(-1) + ":" + String('00'+Math.floor(this.time_left%60)).slice(-2), 450, 200);
 
-    // draw scores
+    // Draw scores
     this.ctx.font = "30px arial";
     this.ctx.fillStyle = "#555";
     if(this.players.self.host) {
@@ -429,7 +399,6 @@ game_core.prototype.client_onnetmessage = function(data) {
     var commands = data.split('.');
     var command = commands[0];
     var commanddata = commands[1] || null;
-    //var commanddata = commands[2] || null;
 
     switch(command) {
 
@@ -457,8 +426,6 @@ game_core.prototype.client_onnetmessage = function(data) {
             break;
 
         case 'e' : //end game requested
-            // show start menu
-
             if (commanddata === 'disconnect') {
                 document.getElementById('start-message').innerHTML = "Disconnection, final score: " +this.players.self.score + " - " + this.players.other.score + ".";
             } else if (commanddata === "reject") {
@@ -480,8 +447,6 @@ game_core.prototype.client_onnetmessage = function(data) {
             break;
 
         case 't' : //end game requested
-            // show start menu
-            //document.getElementById('end-message').innerHTML = "Time up, final score: " +this.players.self.score + " - " + this.players.other.score + ".";
             document.getElementById('start-menu').style.display = "none";
             document.getElementById('end-menu').style.display = "block";
             document.getElementById('menu-container').classList.remove("hidden");
@@ -491,10 +456,6 @@ game_core.prototype.client_onnetmessage = function(data) {
             this.active = false;
 
             break;
-
-        // case 'p' : //server ping
-        //     this.client_onping(commanddata); break;
-
     }
 
 
