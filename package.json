@@ -19,7 +19,8 @@
   },
   "scripts": {
     "test": "./node_modules/mocha/bin/mocha",
-    "build": "webpack --progress"
+    "start": "node app.js",
+    "build": "./node_modules/.bin/webpack --progress"
   },
   "author": "Ben Willis",
   "license": "ISC"

@@ -117,19 +117,12 @@
 	};
 
 	game_core.prototype.reset_positions = function () {
-	    this.players.self.score = 0;
-	    this.players.self.top = 250;
-	    this.players.self.old_state.top = 250;
-	    this.players.self.cur_state.top = 250;
-	    this.players.self.height = 100;
-	    this.players.other.score = 0;
-	    this.players.other.top = 250;
-	    this.players.other.old_state.top = 250;
-	    this.players.other.cur_state.top = 250;
-	    this.players.other.height = 100;
-	    this.puck.top = 295;
-	    this.puck.left = 445;
-	    this.puck.speed = 2;
+	    this.players.self.reset_score();
+	    this.players.self.reset_position();
+	    this.players.other.reset_score();
+	    this.players.other.reset_position();
+
+	    this.puck.reset_position();
 	    this.puck.angle = 90;
 	};
 
@@ -232,21 +225,15 @@
 	            puck.left = 880;
 	        }
 	    } else if (puck.left < -80) {
-	        puck.top = 295;
-	        puck.left = 445;
-	        puck.speed = 2;
-	        puck.angle = -90;
+	        puck.reset_position();
 	        player2.score++;
 	    } else if (puck.left > 970) {
-	        puck.top = 295;
-	        puck.left = 445;
-	        puck.speed = 2;
-	        puck.angle = 90;
+	        puck.reset_position();
 	        player1.score++;
 	    }
 	};
 
-	/* SERVER FUNCTIONS */
+	/* SERVER FUNCTIONS */;
 
 	game_core.prototype.server_update_physics = function () {
 
@@ -669,6 +656,17 @@
 	    }
 	};
 
+	game_player.prototype.reset_position = function () {
+	    this.top = 250;
+	    this.height = 100;
+	    this.old_state = { top: 250 };
+	    this.cur_state = { top: 250 };
+	};
+
+	game_player.prototype.reset_score = function () {
+	    this.score = 0;
+	};
+
 	module.exports = game_player;
 
 /***/ },
@@ -695,6 +693,12 @@
 	game_puck.prototype.draw = function () {
 	    game.ctx.fillStyle = '#fff';
 	    game.ctx.fillRect(this.left, this.top, 10, 10);
+	};
+
+	game_puck.prototype.reset_position = function () {
+	    this.top = 295;
+	    this.left = 445;
+	    this.speed = 2;
 	};
 
 	module.exports = game_puck;
